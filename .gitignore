@@ -1,1 +1,5 @@
+.fleet
 .idea
+tmp
+local
+.env
