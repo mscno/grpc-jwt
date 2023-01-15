@@ -2,6 +2,7 @@ package grpcjwt
 
 import (
 	"context"
+	"github.com/MicahParks/keyfunc"
 	"github.com/golang-jwt/jwt/v4"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
@@ -14,15 +15,15 @@ func (svc *JWTValidator) NewAuthFunc() AuthFunc {
 	return func(ctx context.Context) (context.Context, error) {
 		tokenString, err := extractTokenFromGrpcMetadata(ctx)
 		if err != nil {
-			return nil, err
+			return nil, handleError(err)
 		}
 		token, err := svc.parseToken(tokenString)
 		if err != nil {
-			return nil, err
+			return nil, handleError(err)
 		}
 		err = verifyStandardClaims(token, svc.config)
 		if err != nil {
-			return nil, err
+			return nil, handleError(err)
 		}
 		return ctx, nil
 	}
@@ -78,4 +79,27 @@ func checkBearerToken(authHeader string) (string, error) {
 		return "", ErrBadAuthScheme
 	}
 	return parts[1], nil
+}
+
+func handleError(err error) error {
+	if err, ok := err.(*jwt.ValidationError); ok {
+		switch {
+		case err.Is(jwt.ErrTokenExpired):
+			return ErrTokenExpired
+		case err.Is(jwt.ErrTokenMalformed):
+			return ErrTokenMalformed
+		case err.Is(jwt.ErrTokenNotValidYet):
+			return ErrTokenNotValidYet
+		case err.Is(jwt.ErrTokenUsedBeforeIssued):
+			return ErrTokenUsedBeforeIssued
+		case err.Is(keyfunc.ErrKIDNotFound):
+			return ErrPublicKeyNotFound
+		case err.Is(jwt.ErrTokenSignatureInvalid):
+			if strings.Contains(err.Error(), "signing method") {
+				return ErrBadAlgorithm
+			}
+			return ErrSignatureInvalid
+		}
+	}
+	return err
 }

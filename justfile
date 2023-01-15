@@ -1,4 +1,4 @@
-run: test
+run: test cover
 
 test:
     go test ./...

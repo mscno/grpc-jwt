@@ -183,7 +183,7 @@ func TestValidator(t *testing.T) {
 				ctx:       ctx("Bearer " + getJwksToken("my-audience", "my-issuer", "my-user", time.Now().Add(time.Minute))),
 				validator: badPemValidator,
 			},
-			err: ErrJwksLoadError,
+			err: ErrPublicKeyNotFound,
 		},
 		{
 			name: "ErrTokenNotValidYet",
@@ -438,4 +438,19 @@ func badSignatureToken(exp time.Time) string {
 	tokenString, _ := token.SigningString()
 
 	return strings.Join([]string{tokenString, "bad"}, ".")
+}
+
+type jwtKey struct {
+	Alg string   `json:"alg"`
+	Kty string   `json:"kty"`
+	Use string   `json:"use"`
+	X5c []string `json:"x5c"`
+	N   string   `json:"n"`
+	E   string   `json:"e"`
+	Kid string   `json:"kid"`
+	X5t string   `json:"x5t"`
+}
+
+type jwtKeys struct {
+	Keys []jwtKey `json:"keys"`
 }
