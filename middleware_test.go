@@ -167,7 +167,7 @@ func TestValidator(t *testing.T) {
 				ctx:       ctx("Bearer " + getJwksToken("my-audience", "my-issuer", "my-user", time.Now().Add(time.Minute))),
 				validator: missingKidValidator,
 			},
-			err: ErrPublicKeyNotFound,
+			err: ErrKIDNotFound,
 		},
 		{
 			name: "bad json validator should result in error",
@@ -183,7 +183,7 @@ func TestValidator(t *testing.T) {
 				ctx:       ctx("Bearer " + getJwksToken("my-audience", "my-issuer", "my-user", time.Now().Add(time.Minute))),
 				validator: badPemValidator,
 			},
-			err: ErrPublicKeyNotFound,
+			err: ErrKIDNotFound,
 		},
 		{
 			name: "ErrTokenNotValidYet",
