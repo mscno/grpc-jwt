@@ -9,6 +9,12 @@ Symmetric keys are not supported, but can be added if there is a need for it.
 The package uses the [github.com/golang-jwt/jwt/v4](github.com/golang-jwt/jwt/v4) package for JWT validation, 
 and the [github.com/MicahParks/keyfunc](github.com/MicahParks/keyfunc) package for key fetching and parsing jwks key sets.
 
+### Todos
+
+- Add support for symmetric keys and other algorithms
+- Add support for custom claims
+- Add support for storing the claims in the context for later use
+
 ## Installation
 
 ```bash
