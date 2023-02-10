@@ -14,7 +14,7 @@ type Config struct {
 	// Algorithm is the algorithm used to sign the token
 	Algorithm jwt.SigningMethod
 	// CacheTTL is the time to live for the jwks cache. It is measured in minutes. Defaults to 60 minutes.
-	CacheTTL int64
+	CacheTTL time.Duration
 	// Audience is the audience of the token
 	Audience string
 	// Issuer is the issuer of the token
@@ -48,7 +48,7 @@ type JWTValidator struct {
 const (
 	defaultScopeKey   = "scope"
 	defaultAuthScheme = "Bearer"
-	defaultTTL        = 60
+	defaultTTL        = 60 * time.Minute
 )
 
 var defaultSkipFn = func(ctx context.Context, method string) bool {
@@ -63,7 +63,7 @@ func NewJWTValidator(cfg Config) *JWTValidator {
 	}
 
 	cache := ttlcache.New[string, any](
-		ttlcache.WithTTL[string, any](time.Duration(cfg.CacheTTL) * time.Minute),
+		ttlcache.WithTTL[string, any](cfg.CacheTTL),
 	)
 
 	if cfg.Skip == nil {

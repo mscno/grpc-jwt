@@ -28,7 +28,7 @@ func main() {
     validator := grpc_jwt.NewJWTValidator(Config{
         JwksUrl:   "http://localhost:9999/.well-known/jwks.json",
         Algorithm: jwt.SigningMethodRS256,
-        CacheTTL:  60,
+        CacheTTL:  60 * time.Minute,
         Audience:  "my-audience",
         Issuer:    "my-issuer",
     })
@@ -55,7 +55,7 @@ func main() {
     validator := grpc_jwt.NewJWTValidator(Config{
         JwksUrl:   "http://localhost:9999/.well-known/jwks.json",
         Algorithm: jwt.SigningMethodRS256,
-        CacheTTL:  60,
+        CacheTTL:  60 * time.Minute,
         Audience:  "my-audience",
         Issuer:    "my-issuer",
     })
@@ -71,11 +71,11 @@ func main() {
 
 ## Coverage
 
-Test coverage is currently `97%`.
+Test coverage is currently `99%`.
 
 ```shell
 $ go test -cover -race
 PASS
-coverage: 97.1% of statements
+coverage: 99.3% of statements
 ok      github.com/mscno/grpc-jwt       0.395s
 ```

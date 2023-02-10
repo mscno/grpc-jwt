@@ -13,7 +13,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
 	"net"
 	"net/http"
 	"strings"
@@ -24,7 +26,6 @@ import (
 var defaultValidator = NewJWTValidator(Config{
 	JwksUrl:   "http://localhost:9999/.well-known/jwks.json",
 	Algorithm: jwt.SigningMethodRS256,
-	CacheTTL:  60,
 	Audience:  "my-audience",
 	Issuer:    "my-issuer",
 })
@@ -32,7 +33,6 @@ var defaultValidator = NewJWTValidator(Config{
 var badValidator = NewJWTValidator(Config{
 	JwksUrl:   "http://bad-url",
 	Algorithm: jwt.SigningMethodRS256,
-	CacheTTL:  60,
 	Audience:  "my-audience",
 	Issuer:    "my-issuer",
 })
@@ -40,7 +40,6 @@ var badValidator = NewJWTValidator(Config{
 var badJsonValidator = NewJWTValidator(Config{
 	JwksUrl:   "http://localhost:9999/.well-known/bad-jwks.json",
 	Algorithm: jwt.SigningMethodRS256,
-	CacheTTL:  60,
 	Audience:  "my-audience",
 	Issuer:    "my-issuer",
 })
@@ -48,7 +47,6 @@ var badJsonValidator = NewJWTValidator(Config{
 var missingKidValidator = NewJWTValidator(Config{
 	JwksUrl:   "http://localhost:9999/.well-known/missing-jwks.json",
 	Algorithm: jwt.SigningMethodRS256,
-	CacheTTL:  60,
 	Audience:  "my-audience",
 	Issuer:    "my-issuer",
 })
@@ -56,9 +54,21 @@ var missingKidValidator = NewJWTValidator(Config{
 var badPemValidator = NewJWTValidator(Config{
 	JwksUrl:   "http://localhost:9999/.well-known/bad-pem.json",
 	Algorithm: jwt.SigningMethodRS256,
-	CacheTTL:  60,
 	Audience:  "my-audience",
 	Issuer:    "my-issuer",
+})
+
+var skipValidator = NewJWTValidator(Config{
+	JwksUrl: "http://localhost:9999/.well-known/bad-pem.json",
+	Skip: func(ctx context.Context, method string) bool {
+		return true
+	},
+})
+
+var setGrpcCodes = NewJWTValidator(Config{
+	JwksUrl:            "http://localhost:9999/.well-known/jwks.json",
+	Algorithm:          jwt.SigningMethodRS256,
+	SetGrpcStatusCodes: true,
 })
 
 func TestValidator(t *testing.T) {
@@ -198,6 +208,22 @@ func TestValidator(t *testing.T) {
 				ctx: ctx("Bearer " + getJwksTokenWithTimes("my-audience", "my-issuer", "my-user", time.Now().Add(time.Minute), time.Now().Add(-time.Minute), time.Now().Add(time.Minute))),
 			},
 			err: ErrTokenUsedBeforeIssued,
+		},
+		{
+			name: "Skip ok",
+			args: args{
+				validator: skipValidator,
+				ctx:       ctx("Bearer " + getJwksTokenWithTimes("my-audience", "my-issuer", "my-user", time.Now().Add(time.Minute), time.Now().Add(-time.Minute), time.Now().Add(time.Minute))),
+			},
+			err: nil,
+		},
+		{
+			name: "Test grpc codes",
+			args: args{
+				validator: setGrpcCodes,
+				ctx:       ctx("Bearer " + getJwksTokenWithTimes("my-audience", "my-issuer", "my-user", time.Now().Add(time.Minute), time.Now().Add(-time.Minute), time.Now().Add(time.Minute))),
+			},
+			err: status.New(codes.Unauthenticated, ErrTokenUsedBeforeIssued.Error()).Err(),
 		},
 	}
 
