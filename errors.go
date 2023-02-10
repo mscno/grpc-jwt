@@ -1,14 +1,18 @@
 package grpcjwt
 
 import (
+	"github.com/MicahParks/keyfunc"
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/pkg/errors"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+	"strings"
 )
 
 type GrpcAuthErrors error
 
 var (
 	ErrInternal              GrpcAuthErrors = errors.New("internal error")
-	ErrInvalidKey            GrpcAuthErrors = errors.New("bad jwt key")
 	ErrMissingKey            GrpcAuthErrors = errors.New("authorization header missing")
 	ErrTokenExpired          GrpcAuthErrors = errors.New("token is expired")
 	ErrTokenUsedBeforeIssued GrpcAuthErrors = errors.New("token used before issued")
@@ -16,6 +20,7 @@ var (
 	ErrTokenMalformed        GrpcAuthErrors = errors.New("token is malformed")
 	ErrMissingKidInHeader    GrpcAuthErrors = errors.New("mising kid in header")
 	ErrTokenInvalidAudience  GrpcAuthErrors = errors.New("bad audience")
+	ErrTokenMissingScope     GrpcAuthErrors = errors.New("missing scope")
 	ErrTokenInvalidIssuer    GrpcAuthErrors = errors.New("bad issuer")
 	ErrBadAlgorithm          GrpcAuthErrors = errors.New("bad algorithm")
 	ErrJwksLoadError         GrpcAuthErrors = errors.New("jwks load error")
@@ -23,3 +28,65 @@ var (
 	ErrBadAuthScheme         GrpcAuthErrors = errors.New("bad auth scheme")
 	ErrSignatureInvalid      GrpcAuthErrors = errors.New("signature is invalid")
 )
+
+func handleError(err error, setErrorCodes bool) error {
+	err = handleJwtError(err)
+	if setErrorCodes {
+		return setGrpcErrorCodes(err)
+	}
+	return err
+}
+
+func handleJwtError(err error) error {
+	if err, ok := err.(*jwt.ValidationError); ok {
+		switch {
+		case err.Is(jwt.ErrTokenExpired):
+			return ErrTokenExpired
+		case err.Is(jwt.ErrTokenMalformed):
+			return ErrTokenMalformed
+		case err.Is(jwt.ErrTokenNotValidYet):
+			return ErrTokenNotValidYet
+		case err.Is(jwt.ErrTokenUsedBeforeIssued):
+			return ErrTokenUsedBeforeIssued
+		case err.Is(keyfunc.ErrKIDNotFound):
+			return ErrKIDNotFound
+		case err.Is(jwt.ErrTokenSignatureInvalid):
+			if strings.Contains(err.Error(), "signing method") {
+				return ErrBadAlgorithm
+			}
+			return ErrSignatureInvalid
+		}
+	}
+	return err
+}
+
+func setGrpcErrorCodes(err error) error {
+	switch err {
+	case nil:
+		return nil
+	case ErrTokenExpired:
+		return status.Error(codes.Unauthenticated, err.Error())
+	case ErrTokenMalformed:
+		return status.Error(codes.Unauthenticated, err.Error())
+	case ErrTokenNotValidYet:
+		return status.Error(codes.Unauthenticated, err.Error())
+	case ErrTokenUsedBeforeIssued:
+		return status.Error(codes.Unauthenticated, err.Error())
+	case ErrKIDNotFound:
+		return status.Error(codes.Unauthenticated, err.Error())
+	case ErrBadAlgorithm:
+		return status.Error(codes.Unauthenticated, err.Error())
+	case ErrSignatureInvalid:
+		return status.Error(codes.Unauthenticated, err.Error())
+	case ErrTokenInvalidAudience:
+		return status.Error(codes.Unauthenticated, err.Error())
+	case ErrTokenInvalidIssuer:
+		return status.Error(codes.Unauthenticated, err.Error())
+	case ErrBadAuthScheme:
+		return status.Error(codes.Unauthenticated, err.Error())
+	case ErrMissingKey:
+		return status.Error(codes.Unauthenticated, err.Error())
+	default:
+		return status.Error(codes.Unauthenticated, errors.Wrap(ErrInternal, err.Error()).Error())
+	}
+}

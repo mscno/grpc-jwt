@@ -13,7 +13,7 @@ type Config struct {
 	JwksUrl string
 	// Algorithm is the algorithm used to sign the token
 	Algorithm jwt.SigningMethod
-	// CacheTTL is the time to live for the jwks cache
+	// CacheTTL is the time to live for the jwks cache. It is measured in minutes. Defaults to 60 minutes.
 	CacheTTL int64
 	// Audience is the audience of the token
 	Audience string
@@ -29,6 +29,8 @@ type Config struct {
 	Scope []string
 	// Name of the claims field that contains the scopes. Defaults to "scope".
 	ScopeKey string
+	// If true, the validator will set the grpc status code to "PermissionDenied" if the scope validation fails. Defaults to false.
+	SetGrpcStatusCodes bool
 }
 
 // SkipFn is a function to determine whether to skip the validation. It takes a context and a method name as params.
@@ -46,12 +48,22 @@ type JWTValidator struct {
 const (
 	defaultScopeKey   = "scope"
 	defaultAuthScheme = "Bearer"
+	defaultTTL        = 60
 )
+
+var defaultSkipFn = func(ctx context.Context, method string) bool {
+	return false
+}
 
 // NewJWTValidator Initializes the validator
 func NewJWTValidator(cfg Config) *JWTValidator {
+
+	if cfg.CacheTTL == 0 {
+		cfg.CacheTTL = defaultTTL
+	}
+
 	cache := ttlcache.New[string, any](
-		ttlcache.WithTTL[string, any](60 * time.Minute),
+		ttlcache.WithTTL[string, any](time.Duration(cfg.CacheTTL) * time.Minute),
 	)
 
 	if cfg.Skip == nil {
@@ -59,7 +71,7 @@ func NewJWTValidator(cfg Config) *JWTValidator {
 	}
 
 	if cfg.Extractor == nil {
-		cfg.Extractor = defaultExtractor
+		cfg.Extractor = defaultExtractorFn
 	}
 
 	if cfg.Scheme == "" {

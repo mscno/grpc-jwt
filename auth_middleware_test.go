@@ -207,7 +207,7 @@ func TestValidator(t *testing.T) {
 			if tt.args.validator != nil {
 				validator = tt.args.validator
 			}
-			f := validator.ParseAndValidateJWTAuthHeader()
+			f := UnaryServerInterceptor(validator)
 			_, err := f(tt.args.ctx, tt.args.req, tt.args.info, passThroughHandler)
 			err = errors.Cause(err)
 			assert.Equal(t, tt.err, err)

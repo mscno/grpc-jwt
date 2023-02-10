@@ -8,7 +8,7 @@ import (
 type methodNameKey struct{}
 
 // SetMethodNameInContext sets the method name in the context.
-func (svc *JWTValidator) SetMethodNameInContext() grpc.UnaryServerInterceptor {
+func SetMethodNameInContext() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 		ctx = context.WithValue(ctx, methodNameKey{}, info.FullMethod)
 		return handler(ctx, req)
