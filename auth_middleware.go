@@ -44,6 +44,8 @@ func (svc *JWTValidator) validate(ctx context.Context) (context.Context, error) 
 	if err != nil {
 		return nil, handleJwtError(err)
 	}
+	// Set claims in context
+	ctx = setClaimsInContext(ctx, token.Claims)
 	return ctx, nil
 
 }
