@@ -30,6 +30,13 @@ var defaultValidator = NewJWTValidator(Config{
 	Issuer:    "my-issuer",
 })
 
+var givenValidator = NewJWTValidator(Config{
+	JwtSecret: []byte(privateTestKey),
+	Algorithm: jwt.SigningMethodHS256,
+	Audience:  "my-audience",
+	Issuer:    "my-issuer",
+})
+
 var badValidator = NewJWTValidator(Config{
 	JwksUrl:   "http://bad-url",
 	Algorithm: jwt.SigningMethodRS256,
@@ -218,6 +225,14 @@ func TestValidator(t *testing.T) {
 			err: nil,
 		},
 		{
+			name: "Ok given",
+			args: args{
+				validator: givenValidator,
+				ctx:       ctx("Bearer " + getGivenToken("my-audience", "my-issuer", "my-user", time.Now().Add(time.Minute))),
+			},
+			err: nil,
+		},
+		{
 			name: "Test grpc codes",
 			args: args{
 				validator: setGrpcCodes,
@@ -298,6 +313,8 @@ siwJAoGAS6Li1lYBQ8Oa+to/32Q6s8EhRwuUKmKarKXdfzoDUvBY9kS79Rc2S/QC
 tMJUkdwfbIogI3LM3oYZ56Yxhfx9nl9E7O010QmgmODtnpz9YqiKz+yPYGfHLfnM
 gDPJtHuaw8FUOdnsSSzGF1VhMVbcUnNPEyhDvz2Aj7lfrN7x/r4=
 -----END RSA PRIVATE KEY-----`
+
+const privateTestKey = "test-key"
 
 func startJwksServer() error {
 	pubKey := getTestPublicKey()
@@ -401,6 +418,23 @@ func getTestPublicKey() *rsa.PublicKey {
 func getTestPrivateKey() *rsa.PrivateKey {
 	pk, _ := jwt.ParseRSAPrivateKeyFromPEM([]byte(privateKeyBytes))
 	return pk
+}
+
+func getGivenToken(aud string, iss string, sub string, exp time.Time) string {
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"aud": aud,
+		"iss": iss,
+		"sub": sub,
+		"iat": time.Now().Unix(),
+		"exp": exp.Unix(),
+	})
+
+	token.Header["kid"] = getKidFromPrivate([]byte(privateTestKey))
+	signedToken, err := token.SignedString([]byte(privateTestKey))
+	if err != nil {
+		panic(err)
+	}
+	return signedToken
 }
 
 func getJwksToken(aud string, iss string, sub string, exp time.Time) string {

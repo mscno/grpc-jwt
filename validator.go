@@ -2,15 +2,18 @@ package grpcjwt
 
 import (
 	"context"
+	"time"
+
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/jellydator/ttlcache/v3"
-	"time"
 )
 
 // Config holds the configuration for the JWTValidator
 type Config struct {
 	// JwksUrl is the url to the jwks endpoint
 	JwksUrl string
+	// JwtSecret is the key used to sign the token
+	JwtSecret []byte
 	// Algorithm is the algorithm used to sign the token
 	Algorithm jwt.SigningMethod
 	// CacheTTL is the time to live for the jwks cache. It is measured in minutes. Defaults to 60 minutes.
@@ -80,6 +83,14 @@ func NewJWTValidator(cfg Config) *JWTValidator {
 
 	if cfg.ScopeKey == "" {
 		cfg.ScopeKey = defaultScopeKey
+	}
+
+	if cfg.Algorithm == nil {
+		if len(cfg.JwtSecret) > 0 {
+			cfg.Algorithm = jwt.SigningMethodHS256
+		} else {
+			cfg.Algorithm = jwt.SigningMethodRS256
+		}
 	}
 
 	return &JWTValidator{
