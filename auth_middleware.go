@@ -2,6 +2,7 @@ package grpcjwt
 
 import (
 	"context"
+	"github.com/golang-jwt/jwt/v4"
 	"google.golang.org/grpc"
 )
 
@@ -45,7 +46,7 @@ func (svc *JWTValidator) validate(ctx context.Context) (context.Context, error) 
 		return nil, handleJwtError(err)
 	}
 	// Set claims in context
-	ctx = setClaimsInContext(ctx, token.Claims)
+	ctx = svc.config.ClaimsHandler(ctx, token.Claims.(jwt.MapClaims))
 	return ctx, nil
 
 }

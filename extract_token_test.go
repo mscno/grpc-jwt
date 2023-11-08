@@ -29,7 +29,7 @@ func Test_defaultTokenExtractor(t *testing.T) {
 			ctx := context.Background()
 			md := metadata.Pairs(tt.args.setHeader, tt.args.token)
 			ctx = metadata.NewIncomingContext(ctx, md)
-			fn := defaultTokenExtractor(tt.args.extractHeader)
+			fn := TokenExtractorFromHeader(tt.args.extractHeader)
 			s, err := fn(ctx)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("defaultTokenExtractor() error = %v, wantErr %v", err, tt.wantErr)

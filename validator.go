@@ -26,6 +26,8 @@ type Config struct {
 	Skip SkipFn
 	// Extractor is a function to extract the token from the context. It takes a context as param. If no extractor is provided, the default extractor will be used (the default extractor uses the "Authorization" header).
 	Extractor ExtractorFunc
+	// ClaimsHandler is a function to handle the claims and store them in the context for later use. It takes a context and the claims as params. If no function is provided, the claims will not be stored in the context.
+	ClaimsHandler ClaimsHandlerFunc
 	// Sets the auth schema of the Authorization header. Defaults to "Bearer".
 	Scheme string
 	// List of scopes that are required to access the service. If empty, no scope validation will be performed.
@@ -41,6 +43,9 @@ type SkipFn func(ctx context.Context, method string) bool
 
 // ExtractorFunc is a function to extract the token from the context
 type ExtractorFunc func(ctx context.Context) (string, error)
+
+// ClaimsHandlerFunc is a function to handle the claims and store them in the context for later use
+type ClaimsHandlerFunc func(ctx context.Context, claims jwt.MapClaims) context.Context
 
 // JWTValidator is a validator for JWT tokens
 type JWTValidator struct {
@@ -74,7 +79,7 @@ func NewJWTValidator(cfg Config) *JWTValidator {
 	}
 
 	if cfg.Extractor == nil {
-		cfg.Extractor = defaultExtractorFn
+		cfg.Extractor = TokenExtractorFromHeader("Authorization")
 	}
 
 	if cfg.Scheme == "" {
@@ -91,6 +96,10 @@ func NewJWTValidator(cfg Config) *JWTValidator {
 		} else {
 			cfg.Algorithm = jwt.SigningMethodRS256
 		}
+	}
+
+	if cfg.ClaimsHandler == nil {
+		cfg.ClaimsHandler = setClaimsInContext
 	}
 
 	return &JWTValidator{

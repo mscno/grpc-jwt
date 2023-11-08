@@ -1,9 +1,10 @@
 package grpcjwt
 
 import (
+	"errors"
+	"fmt"
 	"github.com/MicahParks/keyfunc"
 	"github.com/golang-jwt/jwt/v4"
-	"github.com/pkg/errors"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"strings"
@@ -18,15 +19,15 @@ var (
 	ErrTokenUsedBeforeIssued GrpcAuthErrors = errors.New("token used before issued")
 	ErrTokenNotValidYet      GrpcAuthErrors = errors.New("token is not valid yet")
 	ErrTokenMalformed        GrpcAuthErrors = errors.New("token is malformed")
-	ErrMissingKidInHeader    GrpcAuthErrors = errors.New("mising kid in header")
-	ErrTokenInvalidAudience  GrpcAuthErrors = errors.New("bad audience")
-	ErrTokenMissingScope     GrpcAuthErrors = errors.New("missing scope")
-	ErrTokenInvalidIssuer    GrpcAuthErrors = errors.New("bad issuer")
-	ErrBadAlgorithm          GrpcAuthErrors = errors.New("bad algorithm")
-	ErrJwksLoadError         GrpcAuthErrors = errors.New("jwks load error")
-	ErrKIDNotFound           GrpcAuthErrors = errors.New("public key not found")
-	ErrBadAuthScheme         GrpcAuthErrors = errors.New("bad auth scheme")
-	ErrSignatureInvalid      GrpcAuthErrors = errors.New("signature is invalid")
+	//ErrMissingKidInHeader    GrpcAuthErrors = errors.New("mising kid in header")
+	ErrTokenInvalidAudience GrpcAuthErrors = errors.New("bad audience")
+	ErrTokenMissingScope    GrpcAuthErrors = errors.New("missing scope")
+	ErrTokenInvalidIssuer   GrpcAuthErrors = errors.New("bad issuer")
+	ErrBadAlgorithm         GrpcAuthErrors = errors.New("bad algorithm")
+	ErrJwksLoadError        GrpcAuthErrors = errors.New("jwks load error")
+	ErrKIDNotFound          GrpcAuthErrors = errors.New("public key not found")
+	ErrBadAuthScheme        GrpcAuthErrors = errors.New("bad auth scheme")
+	ErrSignatureInvalid     GrpcAuthErrors = errors.New("signature is invalid")
 )
 
 func handleError(err error, setErrorCodes bool) error {
@@ -37,8 +38,9 @@ func handleError(err error, setErrorCodes bool) error {
 	return err
 }
 
-func handleJwtError(err error) error {
-	if err, ok := err.(*jwt.ValidationError); ok {
+func handleJwtError(errIn error) error {
+	var err *jwt.ValidationError
+	if errors.As(errIn, &err) {
 		switch {
 		case err.Is(jwt.ErrTokenExpired):
 			return ErrTokenExpired
@@ -57,7 +59,7 @@ func handleJwtError(err error) error {
 			return ErrSignatureInvalid
 		}
 	}
-	return err
+	return errIn
 }
 
 func setGrpcErrorCodes(err error) error {
@@ -87,6 +89,6 @@ func setGrpcErrorCodes(err error) error {
 	case ErrMissingKey:
 		return status.Error(codes.Unauthenticated, err.Error())
 	default:
-		return status.Error(codes.Unauthenticated, errors.Wrap(ErrInternal, err.Error()).Error())
+		return status.Error(codes.Internal, fmt.Errorf("%v - %w", ErrInternal, err).Error())
 	}
 }

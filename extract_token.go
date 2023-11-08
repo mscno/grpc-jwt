@@ -7,20 +7,23 @@ import (
 
 const defaultMetadataHeader = "authorization"
 
-var defaultExtractorFn = defaultTokenExtractor(defaultMetadataHeader)
+var defaultExtractorFn = TokenExtractorFromHeader(defaultMetadataHeader)
 
-func defaultTokenExtractor(header string) ExtractorFunc {
+func TokenExtractorFromHeader(headers ...string) ExtractorFunc {
 	return func(ctx context.Context) (string, error) {
 		var token string
 		md, ok := metadata.FromIncomingContext(ctx)
 		if !ok {
 			return token, ErrMissingKey
 		}
-		authMetaData := md.Get(header)
-		if len(authMetaData) == 0 {
-			return token, ErrMissingKey
-		} else {
-			token = authMetaData[0]
+		for _, header := range headers {
+			authMetaData := md.Get(header)
+			if len(authMetaData) == 0 {
+				continue
+			} else {
+				token = authMetaData[0]
+				break
+			}
 		}
 		if token == "" {
 			return token, ErrMissingKey

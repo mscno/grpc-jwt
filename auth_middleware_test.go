@@ -9,9 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/golang-jwt/jwt/v4"
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
@@ -250,14 +248,7 @@ func TestValidator(t *testing.T) {
 			}
 			f := UnaryServerInterceptor(validator)
 			_, err := f(tt.args.ctx, tt.args.req, tt.args.info, passThroughHandler)
-			err = errors.Cause(err)
-			assert.Equal(t, tt.err, err)
-			if tt.err != nil {
-				require.Error(t, err)
-				assert.Equal(t, tt.err.Error(), err.Error())
-			} else {
-				assert.NoError(t, err)
-			}
+			assert.ErrorIs(t, err, tt.err)
 		})
 	}
 }

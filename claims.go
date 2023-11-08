@@ -8,7 +8,7 @@ import (
 type claimsKey struct {
 }
 
-func setClaimsInContext(ctx context.Context, claims jwt.Claims) context.Context {
+func setClaimsInContext(ctx context.Context, claims jwt.MapClaims) context.Context {
 	return context.WithValue(ctx, claimsKey{}, claims)
 }
 
