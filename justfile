@@ -1,5 +1,9 @@
 run: test cover
 
+check:
+    go vet ./...
+    go fmt ./...
+
 test:
     go test ./...
 

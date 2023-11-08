@@ -1,6 +1,4 @@
-# grpc-jwt-auth
-[![Build Status](https://travis-ci.org/soheilhy/grpc-jwt-auth.svg?branch=master)](https://travis-ci.org/soheilhy/grpc-jwt-auth)
-[![GoDoc](https://godoc.org/github.com/soheilhy/grpc-jwt-auth?status.svg)](https://godoc.org/github.com/soheilhy/grpc-jwt-auth)
+# grpc-jwt
 
 This is a simple Go package that provides a gRPC server interceptor for JWT authentication.
 The package currently only supports asymmetric keys, and can be used with any gRPC server.
@@ -11,14 +9,11 @@ and the [github.com/MicahParks/keyfunc](github.com/MicahParks/keyfunc) package f
 
 ### Todos
 
-- Add support for symmetric keys and other algorithms
-- Add support for custom claims
-- Add support for storing the claims in the context for later use
 
 ## Installation
 
 ```bash
-go get github.com/mscno/grpc-jwt
+go get -u github.com/mscno/grpc-jwt
 ```
 
 ## Usage

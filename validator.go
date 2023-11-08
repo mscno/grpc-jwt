@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
-	"github.com/jellydator/ttlcache/v3"
 )
 
 // Config holds the configuration for the JWTValidator
@@ -49,7 +48,6 @@ type ClaimsHandlerFunc func(ctx context.Context, claims jwt.MapClaims) context.C
 
 // JWTValidator is a validator for JWT tokens
 type JWTValidator struct {
-	cache  *ttlcache.Cache[string, any]
 	config Config
 }
 
@@ -69,10 +67,6 @@ func NewJWTValidator(cfg Config) *JWTValidator {
 	if cfg.CacheTTL == 0 {
 		cfg.CacheTTL = defaultTTL
 	}
-
-	cache := ttlcache.New[string, any](
-		ttlcache.WithTTL[string, any](cfg.CacheTTL),
-	)
 
 	if cfg.Skip == nil {
 		cfg.Skip = defaultSkipFn
@@ -103,7 +97,6 @@ func NewJWTValidator(cfg Config) *JWTValidator {
 	}
 
 	return &JWTValidator{
-		cache:  cache,
 		config: cfg,
 	}
 }
