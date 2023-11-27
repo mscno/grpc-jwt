@@ -11,7 +11,6 @@ import (
 type TokenParserFunc func(token string) (*jwt.Token, error)
 
 func (svc *JWTValidator) parseToken(token string) (*jwt.Token, error) {
-	fmt.Println(token)
 	var keyFunc jwt.Keyfunc
 	if svc.config.JwksUrl != "" {
 		jwks, err := keyfunc.Get(svc.config.JwksUrl, keyfunc.Options{RefreshInterval: time.Minute * 5})
@@ -23,7 +22,6 @@ func (svc *JWTValidator) parseToken(token string) (*jwt.Token, error) {
 		givenKeys := make(map[string]keyfunc.GivenKey)
 		givenKey := keyfunc.NewGivenHMACCustomWithOptions(svc.config.JwtSecret, keyfunc.GivenKeyOptions{Algorithm: svc.config.Algorithm.Alg()})
 		givenKeys[getKidFromPrivateKey(svc.config.JwtSecret)] = givenKey
-		fmt.Println(givenKeys)
 		jwks := keyfunc.NewGiven(givenKeys)
 		keyFunc = jwks.Keyfunc
 	}
