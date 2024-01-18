@@ -12,10 +12,7 @@ type AuthFunc func(ctx context.Context) (context.Context, error)
 func (svc *JWTValidator) AuthFunc() AuthFunc {
 	return func(ctx context.Context) (context.Context, error) {
 		ctx, err := svc.validate(ctx)
-		if svc.config.SetGrpcStatusCodes {
-			err = setGrpcErrorCodes(err)
-		}
-		return ctx, err
+		return ctx, handleError(err, svc.config.SetGrpcStatusCodes)
 	}
 }
 
